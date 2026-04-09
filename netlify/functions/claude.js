@@ -19,28 +19,30 @@ exports.handler = async function(event) {
     );
 
     const data = await response.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Something went wrong. Please try again.';
+    
+    // Show full response for debugging
+    if (!data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({
+          content: [{ type: 'text', text: 'Debug: ' + JSON.stringify(data) }]
+        })
+      };
+    }
+
+    const text = data.candidates[0].content.parts[0].text;
 
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({
-        content: [{ type: 'text', text: text }]
-      })
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ content: [{ type: 'text', text: text }] })
     };
   } catch (err) {
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({
-        content: [{ type: 'text', text: 'Error: ' + err.message }]
-      })
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ content: [{ type: 'text', text: 'Error: ' + err.message }] })
     };
   }
 };
