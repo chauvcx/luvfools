@@ -5,30 +5,42 @@ exports.handler = async function(event) {
 
   try {
     const body = JSON.parse(event.body);
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: body.max_tokens || 1000,
-        messages: body.messages
-      })
-    });
+    const prompt = body.messages[0].content;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      }
+    );
 
     const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Something went wrong. Please try again.';
+
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({
+        content: [{ type: 'text', text: text }]
+      })
     };
   } catch (err) {
     return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({
+        content: [{ type: 'text', text: 'Error: ' + err.message }]
+      })
     };
   }
 };
